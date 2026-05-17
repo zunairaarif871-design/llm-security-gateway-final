@@ -1,0 +1,45 @@
+{
+  "overall_metrics": {
+    "accuracy": 0.96,
+    "precision": 0.96,
+    "recall": 0.96,
+    "f1_score": 0.96,
+    "false_positive_rate": 0.04,
+    "tp": 72,
+    "fp": 3,
+    "tn": 72,
+    "fn": 3
+  },
+  "latency": {
+    "mean_ms": 388.66,
+    "median_ms": 19.8,
+    "p95_ms": 2141.92,
+    "min_ms": 10.77,
+    "max_ms": 2674.51
+  },
+  "per_language": {
+    "en": 0.625,
+    "ur": 0.5,
+    "ko": 0.4,
+    "mixed": 0.5
+  },
+  "per_category": {
+    "benign": 0.2267,
+    "direct_injection": 1.0,
+    "jailbreak": 1.0,
+    "secret_extraction": 1.0,
+    "rag_manipulation": 1.0,
+    "paraphrased_injection": 1.0,
+    "urdu_injection": 1.0,
+    "korean_injection": 0.8,
+    "mixed_pii_injection": 1.0,
+    "obfuscated": 0.8,
+    "mixed_language": 1.0
+  },
+  "confusion_matrix": {
+    "tp": 72,
+    "fp": 3,
+    "tn": 72,
+    "fn": 3
+  }
+}

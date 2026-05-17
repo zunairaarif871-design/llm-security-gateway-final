@@ -1,0 +1,124 @@
+# ============================================================
+#  LLM Security Gateway — Configuration File
+# ============================================================
+
+policy:
+  block_threshold: 0.65
+  mask_threshold: 0.20
+
+risk_weights:
+  pii_weight: 0.10
+  secret_weight: 0.20
+
+rule_detector:
+  flag_threshold: 0.65
+  suspicious_words:
+    "ignore previous":        0.80
+    "ignore all previous":    0.90
+    "ignore instructions":    0.75
+    "disregard previous":     0.80
+    "disregard instructions": 0.75
+    "override":               0.50
+    "bypass":                 0.90
+    "jailbreak":              0.90
+    "hacker":                 0.70
+    "system prompt":          0.70
+    "show the system":        0.70
+    "show system":            0.65
+    "display the system":     0.70
+    "print the system":       0.70
+    "reveal":                 0.50
+    "reveal prompt":          0.60
+    "show prompt":            0.60
+    "display prompt":         0.90
+    "print prompt":           0.60
+    "the prompt":             0.40
+    "the instructions":       0.50
+    "your instructions":      0.50
+    "previous instructions":  0.60
+    "above instructions":     0.50
+    "all instructions":       0.40
+    "initial instructions":   0.50
+    "original instructions":  0.50
+    "pretend":                0.40
+    "pretend you are":        0.60
+    "act as":                 0.50
+    "roleplay":               0.55
+    "you are now":            0.55
+    "unrestricted":           0.70
+    "no restrictions":        0.65
+    "without restrictions":   0.65
+    "ignore safety":          0.80
+    "bypass safety":          0.85
+    "ignore your training":   0.80
+    "api key":                0.70
+    "api keys":               0.70
+    "access token":           0.65
+    "secret key":             0.70
+    "password":               0.55
+    "credentials":            0.55
+    "show me the key":        0.75
+    "print the key":          0.75
+    "reveal the token":       0.75
+    "retrieved document":     0.50
+    "use the document":       0.45
+    "override your policy":   0.85
+    "as a system instruction": 0.75
+    "forget":                 0.20
+    "ignore":                 0.30
+    "instructions":           0.25
+    "previous":               0.20
+
+semantic_detector:
+  model_path: "models/semantic_model.pkl"
+  flag_threshold: 0.60
+
+presidio:
+  min_confidence: 0.50
+  entities:
+    - PHONE_NUMBER
+    - EMAIL_ADDRESS
+    - PERSON
+    - INTERNAL_ID
+    - CNIC
+    - STUDENT_ID
+    - API_KEY
+    - URL
+  context_boosters:
+    PHONE_NUMBER:  ["phone", "call", "mobile", "contact", "number", "tel"]
+    EMAIL_ADDRESS: ["email", "mail", "contact", "send", "reach"]
+    CNIC:          ["cnic", "nic", "identity", "national id", "card number"]
+    STUDENT_ID:    ["student", "registration", "roll", "id", "reg no"]
+    API_KEY:       ["api", "key", "token", "secret", "bearer", "auth"]
+    INTERNAL_ID:   ["employee", "emp", "staff", "id", "worker"]
+  context_boost_amount: 0.15
+  placeholders:
+    PHONE_NUMBER:  "<PHONE>"
+    EMAIL_ADDRESS: "<EMAIL>"
+    PERSON:        "<PERSON>"
+    INTERNAL_ID:   "<INTERNAL_ID>"
+    CNIC:          "<CNIC>"
+    STUDENT_ID:    "<STUDENT_ID>"
+    API_KEY:       "<API_KEY>"
+    URL:           "<URL>"
+
+language:
+  supported:
+    - en
+    - ur
+    - ko
+  fallback: "en"
+  translate_to_english: true
+
+logging:
+  log_file: "logs/audit.log"
+  log_level: "INFO"
+  log_format: "json"
+
+api:
+  host: "0.0.0.0"
+  port: 8000
+  max_input_length: 2000
+
+latency:
+  target_p95_ms: 500

@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LLM Gateway · Secure Filter</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&family=JetBrains+Mono:wght@400;500&display=swap');
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  background: linear-gradient(145deg,#eef5ff 0%,#e0ebff 100%);
+  font-family:'Inter',sans-serif;
+  padding:2rem 1.25rem;
+  min-height:100vh;
+  display:flex; align-items:center; justify-content:center;
+}
+.card {
+  max-width:750px; width:100%;
+  background:rgba(255,255,255,0.97);
+  border-radius:2rem;
+  box-shadow:0 20px 35px -12px rgba(0,40,80,.12);
+  border:1px solid rgba(100,150,220,.3);
+  overflow:hidden;
+}
+.inner { padding:1.8rem 2rem 2rem; }
+.header {
+  display:flex; align-items:center; gap:14px;
+  padding-bottom:1.2rem;
+  border-bottom:2px solid #d9ebff;
+  margin-bottom:1.6rem;
+}
+.logo {
+  background:linear-gradient(135deg,#3b82f6,#1e40af);
+  width:50px; height:50px; border-radius:18px;
+  display:flex; align-items:center; justify-content:center;
+  box-shadow:0 6px 12px rgba(37,99,235,.2);
+}
+.title h1 {
+  font-size:1.5rem; font-weight:700;
+  background:linear-gradient(120deg,#1e3a8a,#3b82f6);
+  background-clip:text; -webkit-background-clip:text; color:transparent;
+}
+.title p { font-size:.7rem; font-family:'JetBrains Mono',monospace; color:#5a7cac; margin-top:2px; }
+.input-panel {
+  background:#f8fcff; border-radius:1.5rem;
+  padding:1.3rem 1.5rem; margin-bottom:1.8rem;
+  border:1px solid #cde2ff;
+}
+.label {
+  font-size:.7rem; font-weight:600; text-transform:uppercase;
+  letter-spacing:1px; color:#4682d4; margin-bottom:.75rem;
+  display:flex; align-items:center; gap:6px;
+}
+textarea {
+  width:100%; border:1.5px solid #d4e4ff; border-radius:20px;
+  padding:12px 16px; font-family:'Inter',monospace;
+  font-size:.9rem; background:white; resize:vertical;
+  outline:none; transition:all .2s; color:#142745;
+}
+textarea:focus { border-color:#60a5fa; box-shadow:0 0 0 3px rgba(96,165,250,.15); }
+.actions { display:flex; gap:12px; margin-top:14px; align-items:center; }
+.counter {
+  font-size:.7rem; font-family:'JetBrains Mono',monospace;
+  background:#eef3fe; padding:5px 14px; border-radius:40px;
+  color:#2c5f9a; font-weight:500; margin-right:auto;
+}
+.btn-clear {
+  background:transparent; border:1px solid #c2dcff;
+  padding:8px 22px; border-radius:40px;
+  font-size:.8rem; font-weight:500; color:#3b6cb0;
+  cursor:pointer; transition:.2s; font-family:'Inter',sans-serif;
+}
+.btn-clear:hover { background:#ecf5ff; border-color:#8bb9fe; }
+.btn-scan {
+  background:linear-gradient(105deg,#2563eb,#1e40af);
+  border:none; padding:8px 28px; border-radius:40px;
+  font-size:.85rem; font-weight:600; color:white;
+  cursor:pointer; box-shadow:0 4px 10px rgba(37,99,235,.25);
+  transition:.2s; display:inline-flex; align-items:center; gap:8px;
+  font-family:'Inter',sans-serif;
+}
+.btn-scan:disabled { opacity:.55; cursor:not-allowed; }
+.btn-scan:hover:not(:disabled) { transform:translateY(-1px); }
+
+/* verdict */
+.verdict {
+  display:flex; align-items:center; gap:14px;
+  border-radius:20px; padding:1rem 1.4rem;
+  margin-bottom:1.2rem; border-left:5px solid;
+  box-shadow:0 2px 8px rgba(0,0,0,.03);
+}
+.v-allow { border-left-color:#3b82f6; background:#f0f9ff; }
+.v-mask  { border-left-color:#f59e0b; background:#fffbeb; }
+.v-block { border-left-color:#f87171; background:#fff5f5; }
+.v-icon {
+  width:38px; height:38px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+}
+.i-allow { background:#dbeafe; color:#2563eb; }
+.i-mask  { background:#fef3c7; color:#d97706; }
+.i-block { background:#ffe0e0; color:#e54848; }
+.v-info { flex:1; }
+.v-info h3 { font-size:1rem; font-weight:700; color:#111827; }
+.v-info p  { font-size:.73rem; color:#4b5563; margin-top:2px; }
+
+/* metrics */
+.metrics { display:flex; gap:12px; margin-bottom:1.2rem; flex-wrap:wrap; }
+.tile {
+  flex:1; min-width:80px;
+  background:white; border-radius:18px;
+  padding:.9rem .4rem; text-align:center;
+  border:1px solid #e3efff;
+  box-shadow:0 2px 5px rgba(0,0,0,.02);
+}
+.num {
+  font-size:1.4rem; font-weight:700;
+  font-family:'JetBrains Mono',monospace;
+  background:linear-gradient(135deg,#1e3a8a,#3b82f6);
+  background-clip:text; -webkit-background-clip:text; color:transparent;
+}
+.lbl { font-size:.6rem; font-weight:500; text-transform:uppercase; color:#6586b5; margin-top:6px; letter-spacing:.4px; }
+
+/* reason codes */
+.codes { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:1.2rem; }
+.code-badge {
+  background:#fee2e2; color:#b91c1c;
+  font-size:.65rem; font-family:'JetBrains Mono',monospace;
+  padding:3px 10px; border-radius:20px; font-weight:600;
+}
+.code-badge.pii { background:#dbeafe; color:#1e40af; }
+.code-badge.safe { background:#d1fae5; color:#065f46; }
+
+/* pii table */
+.pii-table { width:100%; border-collapse:collapse; font-size:.75rem; margin-bottom:1.2rem; }
+.pii-table th {
+  background:#f0f9ff; color:#2c5b9a;
+  padding:6px 12px; text-align:left;
+  font-family:'JetBrains Mono',monospace; font-size:.65rem;
+  border-bottom:2px solid #d9ebff;
+}
+.pii-table td { padding:6px 12px; border-bottom:1px solid #f0f4ff; color:#142745; }
+.pii-table tr:last-child td { border-bottom:none; }
+
+/* output */
+.output-card { background:white; border-radius:18px; border:1px solid #d9ebff; overflow:hidden; }
+.output-hdr {
+  background:#f4fafe; padding:10px 16px;
+  font-size:.7rem; font-weight:600; color:#2c5b9a;
+  border-bottom:1px solid #e2f0ff;
+  font-family:'JetBrains Mono',monospace;
+}
+.output-body {
+  padding:14px 18px; font-family:'JetBrains Mono',monospace;
+  font-size:.78rem; line-height:1.5; word-break:break-word; color:#142745;
+}
+.hidden { display:none; }
+.spinner {
+  display:inline-block; width:14px; height:14px;
+  border:2px solid rgba(255,255,255,.4); border-top-color:white;
+  border-radius:50%; animation:spin .7s linear infinite;
+}
+@keyframes spin { to { transform:rotate(360deg); } }
+.footer { font-size:.6rem; text-align:center; margin-top:1.2rem; color:#7c9bc2; font-family:monospace; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="inner">
+
+    <!-- Header -->
+    <div class="header">
+      <div class="logo">
+        <svg width="24" height="24" viewBox="0 0 28 28" fill="none">
+          <path d="M14 3L3 9v10c0 5 4.5 9 11 10 6.5-1 11-5 11-10V9L14 3z" fill="white" stroke="#60a5fa" stroke-width="1.3"/>
+          <path d="M9.5 13l3 3 6-6" stroke="#2563eb" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="title">
+        <h1>LLM Gateway</h1>
+        <p>threat · pii · multilingual protection</p>
+      </div>
+    </div>
+
+    <!-- Input -->
+    <div class="input-panel">
+      <div class="label">📝 Input Text</div>
+      <textarea id="inputText" rows="3"
+        placeholder="Enter text to scan — e.g. Ignore previous instructions or My CNIC is 35202-1234567-1"></textarea>
+      <div class="actions">
+        <span class="counter" id="charCount">0 chars</span>
+        <button class="btn-clear" onclick="clearAll()">Clear</button>
+        <button class="btn-scan" id="scanBtn" onclick="runScan()">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <circle cx="7" cy="7" r="6" stroke="white" stroke-width="1.5"/>
+            <path d="M4 7l2 2 4-4" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+          Analyze
+        </button>
+      </div>
+    </div>
+
+    <!-- Results -->
+    <div id="resultSection" class="hidden">
+      <div class="label">📋 Scan Result</div>
+
+      <!-- Verdict -->
+      <div id="verdictCard" class="verdict v-allow">
+        <div id="verdictIcon" class="v-icon i-allow">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <path d="M3 9l4 4 8-8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="v-info">
+          <h3 id="verdictTitle">Allow</h3>
+          <p id="verdictMsg">Input passed all checks</p>
+        </div>
+      </div>
+
+      <!-- Metrics -->
+      <div class="metrics">
+        <div class="tile"><div class="num" id="mRule">—</div><div class="lbl">Rule Score</div></div>
+        <div class="tile"><div class="num" id="mSem">—</div><div class="lbl">Semantic</div></div>
+        <div class="tile"><div class="num" id="mRisk">—</div><div class="lbl">Final Risk</div></div>
+        <div class="tile"><div class="num" id="mLatency">—</div><div class="lbl">Latency ms</div></div>
+        <div class="tile"><div class="num" id="mLang">—</div><div class="lbl">Language</div></div>
+      </div>
+
+      <!-- Reason Codes -->
+      <div id="codesWrap" class="hidden">
+        <div class="label">⚠️ Reason Codes</div>
+        <div class="codes" id="codesList"></div>
+      </div>
+
+      <!-- PII Table -->
+      <div id="piiWrap" class="hidden">
+        <div class="label" style="margin-bottom:.5rem">🔒 PII Detected</div>
+        <table class="pii-table">
+          <thead><tr><th>Type</th><th>Value</th><th>Confidence</th></tr></thead>
+          <tbody id="piiBody"></tbody>
+        </table>
+      </div>
+
+      <!-- Safe Output -->
+      <div id="outputWrap" class="hidden">
+        <div class="output-card">
+          <div class="output-hdr">Safe / Sanitized Output</div>
+          <div class="output-body" id="outputText"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">LLM Gateway v2.0 · CSC 262 Lab Final · secure filtering</div>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+document.addEventListener('DOMContentLoaded', () => {
+  $('inputText').addEventListener('input', () => {
+    $('charCount').innerText = $('inputText').value.length + ' chars';
+  });
+});
+
+function clearAll() {
+  $('inputText').value = '';
+  $('charCount').innerText = '0 chars';
+  $('resultSection').classList.add('hidden');
+}
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+async function runScan() {
+  const text = $('inputText').value.trim();
+  if (!text) return;
+
+  const btn = $('scanBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Scanning...';
+
+  try {
+    const res  = await fetch('/analyze?text_input=' + encodeURIComponent(text), { method:'POST' });
+    const data = await res.json();
+
+    const decision = data.decision || 'ALLOW';
+    const vcCard   = $('verdictCard');
+    const vcIcon   = $('verdictIcon');
+
+    // Verdict styling
+    vcCard.className = 'verdict ' + (
+      decision === 'BLOCK' ? 'v-block' :
+      decision === 'MASK'  ? 'v-mask'  : 'v-allow'
+    );
+    vcIcon.className = 'v-icon ' + (
+      decision === 'BLOCK' ? 'i-block' :
+      decision === 'MASK'  ? 'i-mask'  : 'i-allow'
+    );
+
+    const icons = {
+      ALLOW: '<path d="M3 9l4 4 8-8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
+      MASK:  '<path d="M9 2v5h5M9 2L4 7v9h10V7L9 2z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
+      BLOCK: '<path d="M4 4l10 10M14 4L4 14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>'
+    };
+    vcIcon.innerHTML = `<svg width="18" height="18" viewBox="0 0 18 18" fill="none">${icons[decision]||icons.ALLOW}</svg>`;
+
+    $('verdictTitle').innerText = decision;
+    $('verdictMsg').innerText =
+      decision === 'BLOCK' ? 'Injection or high-risk content detected — blocked' :
+      decision === 'MASK'  ? 'PII detected — sensitive values masked' :
+                             'Input passed all checks';
+
+    // Metrics
+    $('mRule').innerText    = (data.rule_score     ?? '—').toString().substring(0,4);
+    $('mSem').innerText     = (data.semantic_score ?? '—').toString().substring(0,4);
+    $('mRisk').innerText    = (data.final_risk     ?? '—').toString().substring(0,4);
+    $('mLatency').innerText = data.latency_ms ? Math.round(data.latency_ms) : '—';
+    $('mLang').innerText    = (data.language || '—').toUpperCase();
+
+    // Reason codes
+    const codes = data.reason_codes || [];
+    if (codes.length > 0) {
+      $('codesList').innerHTML = codes.map(c => {
+        const cls = c.includes('PII') || c.includes('COMPOSITE') ? 'pii' :
+                    c === 'ALLOW' ? 'safe' : '';
+        return `<span class="code-badge ${cls}">${esc(c)}</span>`;
+      }).join('');
+      $('codesWrap').classList.remove('hidden');
+    } else {
+      $('codesWrap').classList.add('hidden');
+    }
+
+    // PII table
+    const entities = data.pii_entities || [];
+    if (entities.length > 0) {
+      $('piiBody').innerHTML = entities.map(e =>
+        `<tr><td><b>${esc(e.type)}</b></td><td>${esc(e.text)}</td><td>${(e.score*100).toFixed(0)}%</td></tr>`
+      ).join('');
+      $('piiWrap').classList.remove('hidden');
+    } else {
+      $('piiWrap').classList.add('hidden');
+    }
+
+    // Safe output
+    const safe = data.safe_text || '';
+    if (safe && decision !== 'BLOCK') {
+      $('outputText').innerHTML = esc(safe);
+      $('outputWrap').classList.remove('hidden');
+    } else {
+      $('outputWrap').classList.add('hidden');
+    }
+
+    $('resultSection').classList.remove('hidden');
+
+  } catch(err) {
+    $('verdictCard').className  = 'verdict v-block';
+    $('verdictIcon').className  = 'v-icon i-block';
+    $('verdictTitle').innerText = 'Connection Error';
+    $('verdictMsg').innerText   = 'Cannot reach server — is it running?';
+    $('codesWrap').classList.add('hidden');
+    $('piiWrap').classList.add('hidden');
+    $('outputWrap').classList.add('hidden');
+    $('resultSection').classList.remove('hidden');
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+    <circle cx="7" cy="7" r="6" stroke="white" stroke-width="1.5"/>
+    <path d="M4 7l2 2 4-4" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+    </svg> Analyze`;
+}
+</script>
+</body>
+</html>
